@@ -6,7 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
+import db from './db.json';
 @Module({
   imports: [
     // GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -19,8 +19,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       url: process.env.DATABASE_URL,
       entities: [],
       extra: {
-        ssl: true,
+        ssl: { rejectUnauthorized: false },
       },
+
       synchronize: true, //TODO: make this depend on environment, dangerous in production
     }),
     AuthModule,

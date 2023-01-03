@@ -31,10 +31,10 @@
     "apollo-server-express": "^3.11.1",
     "bcrypt": "^5.1.0",
     "graphql": "^16.6.0",
-    "mssql": "^7.3.5",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
+    "pg": "^8.8.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
     "typeorm": "^0.3.11"

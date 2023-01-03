@@ -18,6 +18,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       type: 'postgres',
       url: process.env.DATABASE_URL,
       entities: [],
+      extra: {
+        ssl: true,
+      },
       synchronize: true, //TODO: make this depend on environment, dangerous in production
     }),
     AuthModule,

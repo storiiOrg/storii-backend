@@ -1,24 +1,55 @@
 import { Injectable } from '@nestjs/common';
-
-// This should be a real class/interface representing a user entity
-export type User = { userId: number; username: string; password: string };
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './user.entity';
+import { CreationUser } from './user.helpers';
+import { generateSalt, encodeHash } from '../auth/auth.utilities';
 @Injectable()
 export class UsersService {
-  private readonly users = [
-    {
-      userId: 1,
-      username: 'john',
-      password: 'changeme',
-    },
-    {
-      userId: 2,
-      username: 'maria',
-      password: 'guess',
-    },
-  ];
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
 
-  async findOne(username: string): Promise<User | undefined> {
-    return this.users.find((user) => user.username === username);
+  findAll(): Promise<User[]> {
+    return this.usersRepository.find();
+  }
+
+  findOne(query: { id?: number; email?: string }): Promise<User> {
+    if (query.id != null) {
+      return this.usersRepository.findOneBy({ id: query.id });
+    } else if (query.email != null) {
+      return this.usersRepository.findOneBy({ email: query.email });
+    }
+  }
+
+  async createOne(user: CreationUser): Promise<boolean> {
+    const existingUser = await this.findOne({
+      email: user.email,
+    });
+
+    // Precautionary checks
+    if (
+      existingUser ||
+      !user.email ||
+      !user.firstName ||
+      !user.lastName ||
+      !user.password
+    )
+      return false;
+
+    const newUser = new User(user);
+
+    const salt = await generateSalt();
+    const hashed = await encodeHash(user.password, salt);
+    newUser.hash = hashed;
+    newUser.salt = salt;
+
+    const response = await this.usersRepository.save(newUser);
+    return response.id != null;
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.usersRepository.delete(id);
   }
 }

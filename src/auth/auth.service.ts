@@ -1,7 +1,9 @@
 import { Dependencies, Injectable } from '@nestjs/common';
-import { User, UsersService } from '../users/users.service';
+import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { PublicUser, User } from 'src/users/user.entity';
+import { CreationUser, LoginUser } from 'src/users/user.helpers';
+import { encodeHash } from './auth.utilities';
 
 @Dependencies(UsersService, JwtService)
 @Injectable()
@@ -14,28 +16,46 @@ export class AuthService {
     this.jwtService = jwtService;
   }
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOne(username);
-    if (user && user.password === pass) {
-      //TODO:salt and encrypt passwords
-      const { password, ...result } = user;
-      return result;
+  async validateUser(user: LoginUser): Promise<any> {
+    // const existingUser = await this.usersService.findOne({ email: user.email });
+    // if (!existingUser) {
+    //   return null;
+    // }
+    // const hashed = await encodeHash(user.password, existingUser.salt);
+    // if (hashed === existingUser.hash) {
+    //   //TODO:salt and encrypt passwords
+    //   return new PublicUser(existingUser);
+    // }
+    // return null;
+  }
+
+  async login(payload: { email: string; pass: string }) {
+    // check if user is logged in
+    const existingUser = await this.usersService.findOne({
+      email: payload.email,
+    });
+
+    if (!existingUser) return null;
+
+    const hashed = await encodeHash(payload.pass, existingUser.salt);
+
+    if (hashed === existingUser.hash) {
+      return {
+        access_token: this.jwtService.sign(payload),
+      };
     }
+
     return null;
   }
 
-  async login(user: User) {
-    const payload = { username: user.username, sub: user.userId };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
-  }
+  async register(user: CreationUser) {
+    try {
+      await this.usersService.createOne(user);
 
-  async register(user: User) {
-    // TODO: Check if email already registered
-    const salt = await bcrypt.genSalt();
-    const password = user.password;
-    const hash = await bcrypt.hash(password, salt);
-    return hash;
+      // Also send an email to the new user
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
